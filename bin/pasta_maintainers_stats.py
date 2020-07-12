@@ -86,12 +86,30 @@ def dump_csv(headers, relevant_headers, data, filename):
             str += headers[num][1] % entry[num] + '\t\t'
         print(str)
 
+#TODO: how to show size of a node? HUGE node or just color-coded?
 # REMEMBER: relevant is a defaultdict(Counter) with all the subsystems and what it calculated
-# object_stats has absolutely everything
-def generate_graph(relevant, object_stats):
-    print('Relevant is a ', relevant)
-    #TODO: how to show size of a node? HUGE node or just color-coded?
+# object_stats has absolutely everything, include again when needed later
+def generate_graph(relevant, all_maintainers, files_map, filter_files=None):
+    length = len(relevant.keys()) + 1
+    relevant_list = list(relevant.keys())
+    print('Length is ', length)
+    print('section_list is ', relevant_list)
 
+    # initialize empty adjacency matrix
+    adjacency = [[0 for x in range(length)] for y in range(length)]
+
+    # assign the section names to the adjacency matrix, first entry is empty string
+    adjacency[0][0] = ''
+    for i in range(length-1):
+        adjacency[0][i+1] = relevant_list[i]
+        adjacency[i+1][0] = relevant_list[i]
+    
+    # TODO: make this print a little less completely hideous? Maybe?
+    for i in range(length):
+        string = ''
+        for j in range(length):
+            string += '\t' + str(adjacency[i][j])
+        print(string + '\n')
 
 
 def maintainers_stats(config, argv):
@@ -242,7 +260,7 @@ def maintainers_stats(config, argv):
 
 
     if args.mode == 'graph':
-        generate_graph(relevant, object_stats)
+        generate_graph(relevant, all_maintainers, file_map, filter_by_files)
         return
 
 
