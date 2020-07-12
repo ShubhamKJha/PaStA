@@ -226,15 +226,6 @@ def maintainers_stats(config, argv):
         # Everything is relevant, if there is no filter.
         relevant = object_stats
 
-    # Fill all the format strings
-    headers = [('%-30s' % _title, '%-30.30s', _title),
-               ('Sum Lines', '%-9u', 'sum_lines'),
-               ('File size', '%-14u', 'filesize'),
-               ('Lines in filter', '%-10u', 'lines_in_filter'),
-               ('Lines percentage', '%-16.2f', 'lines_percentage'),
-               ('Relevant files', '%-s', 'relevant_files'),
-               ('%-10s' % 'status', '%-10s', 'status')]
-
     for object, counter in relevant.items():
         object_stat = object_stats[object]
         lines_percentage = counter['lines'] / object_stat['lines']
@@ -261,6 +252,15 @@ def maintainers_stats(config, argv):
 
     # sort by lines percentage
     result.sort(key=lambda x: x[3])
+
+    # Fill all the format strings
+    headers = [('%-30s' % _title, '%-30.30s', _title),
+               ('Sum Lines', '%-9u', 'sum_lines'),
+               ('File size', '%-14u', 'filesize'),
+               ('Lines in filter', '%-10u', 'lines_in_filter'),
+               ('Lines percentage', '%-16.2f', 'lines_percentage'),
+               ('Relevant files', '%-s', 'relevant_files'),
+               ('%-10s' % 'status', '%-10s', 'status')]
 
     # determine the order of the columns
     relevant_headers = [0, 1]
