@@ -113,6 +113,13 @@ def maintainers_stats(config, argv):
                              'Default: %(default)s')
     parser.add_argument('--revision', type=str, help='Specify a commit hash or '
                         'a version name for a Linux repo')
+    parser.add_argument('--mode', type=str, default='stats',
+                        choices={'stats', 'graph'},
+                        help='\'stats\' prints the configured stats'
+                             '\'graph\' generates a graph visualizing '
+                             'the sections and their relations to another '
+                             'based on the (non-)filtered files'
+                             'Default: %(default)s')
 
     args = parser.parse_args(argv)
     repo = config.repo
