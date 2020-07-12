@@ -86,6 +86,9 @@ def dump_csv(headers, relevant_headers, data, filename):
             str += headers[num][1] % entry[num] + '\t\t'
         print(str)
 
+def generate_graph():
+    print('IMPLEMENT ME!')
+
 
 def maintainers_stats(config, argv):
     parser = ArgumentParser(prog='maintainers_stats',
@@ -232,6 +235,15 @@ def maintainers_stats(config, argv):
     else:
         # Everything is relevant, if there is no filter.
         relevant = object_stats
+
+
+    if args.mode == 'graph':
+        generate_graph()
+        return
+
+
+    # everything from here onwards is e.g. calculating the relevant subsystem relative to the whole and stuff
+    # nothing I want to get involved with just yet...?
 
     for object, counter in relevant.items():
         object_stat = object_stats[object]
