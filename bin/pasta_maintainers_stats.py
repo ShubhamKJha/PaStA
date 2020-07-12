@@ -90,51 +90,62 @@ def dump_csv(headers, relevant_headers, data, filename):
 # REMEMBER: relevant is a defaultdict(Counter) with all the subsystems and what it calculated
 # object_stats has absolutely everything, include again when needed later
 def generate_graph(file_map, all_maintainers, file_filters):
+    def _print_matrix(matrix):
+        for i in range(len(matrix[0])):
+            print(matrix[i])
 
-    # can't do that, this section list is HUGE.... must build it dynamically
-    #section_list = list()
-
-    #for _, (_, _, sections) in file_map.items():
-    #    section_list.extend(sections)
-
-    #print('list is ', section_list)
-
-    # find all sections and initialize an empty adjacency matrix
 
     #empty placeholder for the beginning, needed for the matrix
-    adjacency_matrix = [[]]
-    adjacency_matrix[0].append('')
+    adjacency = [[]]
+    adjacency[0].append('')
 
-    # side effect to keep in mind: the actual sectionsize is being calculated on the diagonale
-    for file, (lines, size, sections) in file_map.items():
-        def append_section(section):
-                # append the new section to the header
-                adjacency_matrix[0].append(section)
-                # fill the newly found section with fresh Counters and their header again
-                adjacency_matrix.append([section])
-                adjacency_matrix[index].extend([Counter() for x in range(index)])
+    keys = set()
 
+    if (len(file_filters)):
+        keys = file_filters
+    else:
+        keys = file_map.keys()
+
+    #print('keys are ', file_map.keys())
+    print('MY !!!! keys are ', keys)
+
+    for file_key in keys:
+        def _append_section(section, index):
+            # append the new section to the header
+            adjacency[0].append(section)
+
+            #append to every section so far a new counter
+            for x in range(1, index):
+                adjacency[x].append(Counter())
+
+
+            # fill the newly found section with fresh Counters and their header again
+            adjacency.append([section])
+            adjacency[index].extend([Counter() for x in range(index)])
+
+        lines, size, sections = file_map[file_key]
         for section in sections:
-            index = len(adjacency_matrix[0])
+            index = len(adjacency[0])
             try:
-                index = adjacency_matrix[0].index(section)
+                index = adjacency[0].index(section)
             except ValueError: 
-                append_section(section)
+                _append_section(section, index)
 
             # TODO: think of a better name
             for section_2 in sections:
-                j = -1
+                j = len(adjacency[0])
                 try:
-                    j = adjacency_matrix.index(section_2)
+                    j = adjacency[0].index(section_2)
                 except ValueError:
-                    append_section(section_2)
+                    _append_section(section_2, j)
 
                 # TODO: kind of a waste of memory to keep the undirected adjacency matrix reflective, but whatever
-                adjacency_matrix[index][j].update(lines=lines, size=size)
+                print('index is ' + str(index) + ', ' + str(j))
+                _print_matrix(adjacency)
+                adjacency[index][j].update(lines=lines, size=size)
+    # side effect to keep in mind: the actual sectionsize is being calculated on the diagonale
 
-    print('bruh, we MADE it')
-
-
+    _print_matrix(adjacency)
 
 
 def maintainers_stats(config, argv):
