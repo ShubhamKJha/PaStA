@@ -258,10 +258,10 @@ def maintainers_stats(config, argv):
         # Everything is relevant, if there is no filter.
         relevant = object_stats
 
-
-    if args.mode == 'graph':
-        generate_graph(relevant, all_maintainers, file_map, filter_by_files)
-        return
+    # if we want to generate the graph, we just need the file_map to again calculate the information 
+    #if args.mode == 'graph':
+    #    generate_graph(relevant, all_maintainers, file_map, filter_by_files)
+    #    return
 
 
     # everything from here onwards is e.g. calculating the relevant subsystem relative to the whole and stuff
