@@ -86,8 +86,12 @@ def dump_csv(headers, relevant_headers, data, filename):
             str += headers[num][1] % entry[num] + '\t\t'
         print(str)
 
-def generate_graph():
-    print('IMPLEMENT ME!')
+# REMEMBER: relevant is a defaultdict(Counter) with all the subsystems and what it calculated
+# object_stats has absolutely everything
+def generate_graph(relevant, object_stats):
+    print('Relevant is a ', relevant)
+    #TODO: how to show size of a node? HUGE node or just color-coded?
+
 
 
 def maintainers_stats(config, argv):
@@ -238,7 +242,7 @@ def maintainers_stats(config, argv):
 
 
     if args.mode == 'graph':
-        generate_graph()
+        generate_graph(relevant, object_stats)
         return
 
 
