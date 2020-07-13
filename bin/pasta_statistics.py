@@ -26,8 +26,22 @@ def statistics(config, argv):
                         help='Date selector: Either Author Date, Commit Date or Stack Release Date (default: %(default)s)')
     parser.add_argument('-noR', dest='R', action='store_false', help='Don\'t invoke R')
     parser.add_argument('-noEx', dest='Ex', action='store_false', help='Don\'t export data')
+    parser.add_argument('-graph', dest='Gr', help='generate graph based on csv file path, that is provided')
     parser.set_defaults(R=True)
     args = parser.parse_args(argv)
+
+
+    if args.Gr:
+        # make sure the file exists
+        if os.path.isfile(args.Gr):
+            print('Invoking graph generator')
+            call(['./analyses/graph.R', args.Gr])
+            return
+
+        else:
+            print('File specified couldn\'t be found. Exiting...')
+            return
+
 
     # !FIXME Not aligned with current API
     config.fail_no_patch_groups()
@@ -51,6 +65,7 @@ def statistics(config, argv):
     date_selector = get_date_selector(repo, psd, args.date_selector)
 
     export = Export(repo, psd)
+
 
     if args.Ex:
         # Export sorted list of release names
