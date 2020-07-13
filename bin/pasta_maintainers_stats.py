@@ -86,12 +86,36 @@ def dump_csv(headers, relevant_headers, data, filename):
             str += headers[num][1] % entry[num] + '\t\t'
         print(str)
 
+# TODO: unify this with the other dump_csv method?
+
+def dump_adj_csv(data_matrix, filename):
+    with open(filename, 'w+') as csv_file:
+        csv_writer = writer(csv_file)
+        csv_writer.writerows(data_matrix)
+
+    return
+
+
 #TODO: how to show size of a node? HUGE node or just color-coded?
 # REMEMBER: relevant is a defaultdict(Counter) with all the subsystems and what it calculated
 # object_stats has absolutely everything, include again when needed later
-def generate_graph(file_map, all_maintainers, file_filters):
+def generate_graph(file_map, all_maintainers, file_filters, filename):
+    def _generate_data_matrix(matrix, criteria):
+        new_matrix = [[]]
+
+        # Header stays the same
+        new_matrix[0] = matrix[0]
+
+        for i in range (1, len(matrix)):
+            new_matrix.append([])
+            new_matrix[i].append(matrix[i][0])
+            for j in range (1, len(matrix)):
+                new_matrix[i].append(matrix[i][j][criteria])
+
+        return  new_matrix
+
     def _print_matrix(matrix):
-        for i in range(len(matrix[0])):
+        for i in range(len(matrix)):
             print(matrix[i])
 
 
@@ -143,9 +167,14 @@ def generate_graph(file_map, all_maintainers, file_filters):
                 print('index is ' + str(index) + ', ' + str(j))
                 _print_matrix(adjacency)
                 adjacency[index][j].update(lines=lines, size=size)
-    # side effect to keep in mind: the actual sectionsize is being calculated on the diagonale
+    # side effect to keep in mind: the actual section size is being calculated on the diagonale
 
     _print_matrix(adjacency)
+
+    lines_matrix = _generate_data_matrix(adjacency, 'lines')
+
+    log.info('Generating csv file')
+    dump_adj_csv(lines_matrix, filename + '_lines.csv')
 
 
 def maintainers_stats(config, argv):
@@ -183,6 +212,12 @@ def maintainers_stats(config, argv):
                              'Default: %(default)s')
 
     args = parser.parse_args(argv)
+
+    if args.mode == 'graph' and not args.csv:
+        log.error('Graph mode and no given output for csv file. Exiting')
+        return
+
+
     repo = config.repo
 
     kernel_revision = 'HEAD'
@@ -235,7 +270,7 @@ def maintainers_stats(config, argv):
 
     # if we want to generate the graph, we just need the file_map to again calculate the information 
     if args.mode == 'graph':
-        generate_graph(file_map, all_maintainers, filter_by_files)
+        generate_graph(file_map, all_maintainers, filter_by_files, args.csv)
         return
 
     # An object is the kind of the analysis, and reflects the target. A target
