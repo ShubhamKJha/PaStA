@@ -97,31 +97,12 @@ def dump_adj_csv(data_matrix, filename):
 
 
 #TODO: how to show size of a node? HUGE node or just color-coded?
-# REMEMBER: relevant is a defaultdict(Counter) with all the subsystems and what it calculated
-# object_stats has absolutely everything, include again when needed later
-def generate_graph(file_map, all_maintainers, file_filters, filename):
-    def _generate_data_matrix(matrix, criteria):
-        new_matrix = [[]]
+# This method generates an adjacency matrix marking all the relevant sections.
+# Its output is built to look like the output of an excel adjacency matrix in csv format
 
-        # Header stays the same
-        new_matrix[0] = matrix[0]
-
-        for i in range (1, len(matrix)):
-            new_matrix.append([])
-            new_matrix[i].append(matrix[i][0])
-            for j in range (1, len(matrix)):
-                new_matrix[i].append(matrix[i][j][criteria])
-
-        return  new_matrix
-
-    def _print_matrix(matrix):
-        for i in range(len(matrix)):
-            print(matrix[i])
-
-
-    #empty placeholder for the beginning, needed for the matrix
-    adjacency = [[]]
-    adjacency[0].append('')
+def generate_graph(file_map, all_maintainers_ file_filters, filename):
+    # first entry of headers needs to be empty
+    headers = ['']
 
     keys = set()
 
@@ -134,47 +115,96 @@ def generate_graph(file_map, all_maintainers, file_filters, filename):
     print('MY !!!! keys are ', keys)
 
     for file_key in keys:
-        def _append_section(section, index):
-            # append the new section to the header
-            adjacency[0].append(section)
+        def append_section(section, headers, matrix):
+            headers.append(section)
 
-            #append to every section so far a new counter
-            for x in range(1, index):
-                adjacency[x].append(Counter())
+            # append a new list to the matrix representing the new header now
+            matrix.append([Counter() for x in range(matrix)])
+
+            # append to every row a new counter for the new column
+            for i in range(len(matrix)):
+                matrix[i].append(Counter())
+
+            
+        
 
 
-            # fill the newly found section with fresh Counters and their header again
-            adjacency.append([section])
-            adjacency[index].extend([Counter() for x in range(index)])
-
-        lines, size, sections = file_map[file_key]
-        for section in sections:
-            index = len(adjacency[0])
-            try:
-                index = adjacency[0].index(section)
-            except ValueError: 
-                _append_section(section, index)
-
-            # TODO: think of a better name
-            for section_2 in sections:
-                j = len(adjacency[0])
-                try:
-                    j = adjacency[0].index(section_2)
-                except ValueError:
-                    _append_section(section_2, j)
-
-                # TODO: kind of a waste of memory to keep the undirected adjacency matrix reflective, but whatever
-                print('index is ' + str(index) + ', ' + str(j))
-                _print_matrix(adjacency)
-                adjacency[index][j].update(lines=lines, size=size)
-    # side effect to keep in mind: the actual section size is being calculated on the diagonale
-
-    _print_matrix(adjacency)
-
-    lines_matrix = _generate_data_matrix(adjacency, 'lines')
-
-    log.info('Generating csv file')
-    dump_adj_csv(lines_matrix, filename + '_lines.csv')
+#OLD: remember: it works if needed! Very hanky tho
+#def generate_graph(file_map, all_maintainers, file_filters, filename):
+#    def _generate_data_matrix(matrix, criteria):
+#        new_matrix = [[]]
+#
+#        # Header stays the same
+#        new_matrix[0] = matrix[0]
+#
+#        for i in range (1, len(matrix)):
+#            new_matrix.append([])
+#            new_matrix[i].append(matrix[i][0])
+#            for j in range (1, len(matrix)):
+#                new_matrix[i].append(matrix[i][j][criteria])
+#
+#        return  new_matrix
+#
+#    def _print_matrix(matrix):
+#        for i in range(len(matrix)):
+#            print(matrix[i])
+#
+#    #empty placeholder for the beginning, needed for the matrix
+#    adjacency = [[]]
+#    adjacency[0].append('')
+#
+#    keys = set()
+#
+#    if (len(file_filters)):
+#        keys = file_filters
+#    else:
+#        keys = file_map.keys()
+#
+#    #print('keys are ', file_map.keys())
+#    print('MY !!!! keys are ', keys)
+#
+#    for file_key in keys:
+#        def _append_section(section, index):
+#            # append the new section to the header
+#            adjacency[0].append(section)
+#
+#            #append to every section so far a new counter
+#            for x in range(1, index):
+#                adjacency[x].append(Counter())
+#
+#
+#            # fill the newly found section with fresh Counters and their header again
+#            adjacency.append([section])
+#            adjacency[index].extend([Counter() for x in range(index)])
+#
+#        lines, size, sections = file_map[file_key]
+#        for section in sections:
+#            index = len(adjacency[0])
+#            try:
+#                index = adjacency[0].index(section)
+#            except ValueError: 
+#                _append_section(section, index)
+#
+#            # TODO: think of a better name
+#            for section_2 in sections:
+#                j = len(adjacency[0])
+#                try:
+#                    j = adjacency[0].index(section_2)
+#                except ValueError:
+#                    _append_section(section_2, j)
+#
+#                # TODO: kind of a waste of memory to keep the undirected adjacency matrix reflective, but whatever
+#                print('index is ' + str(index) + ', ' + str(j))
+#                _print_matrix(adjacency)
+#                adjacency[index][j].update(lines=lines, size=size)
+#    # side effect to keep in mind: the actual section size is being calculated on the diagonale
+#
+#    _print_matrix(adjacency)
+#
+#    lines_matrix = _generate_data_matrix(adjacency, 'lines')
+#
+#    log.info('Generating csv file')
+#    dump_adj_csv(lines_matrix, filename + '_lines.csv')
 
 
 def maintainers_stats(config, argv):
