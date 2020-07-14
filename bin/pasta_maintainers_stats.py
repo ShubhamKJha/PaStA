@@ -102,15 +102,13 @@ def dump_adj_csv(data_matrix, filename):
 # Its output is built to look like the output of an excel adjacency matrix in csv format
 
 def generate_graph(file_map, all_maintainers_, file_filters, filename):
-
     def _print_matrix():
         print('Matrix is ', matrix)
         print('len matrix is ', len(matrix))
         print('empty ' + str(headers))
         for i in range(len(matrix)):
             string = ''
-            for j in range(len(matrix[i])):
-                #print('Indexes are i=%s and j=%s' % (i, j))
+            for j in range(len(matrix)):
                 string += '  ' + str(matrix[i][j])
             print(string)
 
@@ -122,7 +120,7 @@ def generate_graph(file_map, all_maintainers_, file_filters, filename):
         keys = file_map.keys()
 
     headers = []
-    matrix = [[]]
+    matrix = []
 
     for file_key in keys:
 
@@ -145,7 +143,6 @@ def generate_graph(file_map, all_maintainers_, file_filters, filename):
             try:
                 i = headers.index(first)
             except ValueError: 
-                print('appending section ', first)
                 _append_section(first, headers, matrix)
 
             for second in sections:
@@ -153,7 +150,6 @@ def generate_graph(file_map, all_maintainers_, file_filters, filename):
                 try:
                     j = headers.index(second)
                 except:
-                    print('appending section ', second)
                     _append_section(second, headers, matrix)
 
                 matrix[i][j].update(lines=lines, size=size)
