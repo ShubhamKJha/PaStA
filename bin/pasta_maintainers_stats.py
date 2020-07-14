@@ -70,7 +70,7 @@ def get_status(all_maintainers, section_name):
         return ''
 
 
-def dump_csv(headers, relevant_headers, data, filename):
+def dump_csv(headers, relevant_headers, data, filename, adjacency=FALSE):
     if filename:
         with open(filename, 'w+') as csv_file:
             csv_writer = writer(csv_file)
@@ -86,15 +86,6 @@ def dump_csv(headers, relevant_headers, data, filename):
             str += headers[num][1] % entry[num] + '\t\t'
         print(str)
 
-# TODO: unify this with the other dump_csv method?
-
-def dump_adj_csv(data_matrix, filename):
-    with open(filename, 'w+') as csv_file:
-        csv_writer = writer(csv_file)
-        csv_writer.writerows(data_matrix)
-
-    return
-
 
 #TODO: how to show size of a node? HUGE node or just color-coded?
 # TODO later: first entry always empty!
@@ -102,16 +93,6 @@ def dump_adj_csv(data_matrix, filename):
 # Its output is built to look like the output of an excel adjacency matrix in csv format
 
 def generate_graph(file_map, all_maintainers_, file_filters, filename):
-    def _print_matrix():
-        print('Matrix is ', matrix)
-        print('len matrix is ', len(matrix))
-        print('empty ' + str(headers))
-        for i in range(len(matrix)):
-            string = ''
-            for j in range(len(matrix)):
-                string += '  ' + str(matrix[i][j])
-            print(string)
-
     keys = set()
 
     if (len(file_filters)):
@@ -157,7 +138,6 @@ def generate_graph(file_map, all_maintainers_, file_filters, filename):
                 _print_matrix()
 
         lines_matrix = [[entry['lines'] for entry in row] for row in matrix]
-
 
 
 
