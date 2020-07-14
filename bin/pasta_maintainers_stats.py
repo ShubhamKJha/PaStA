@@ -97,12 +97,22 @@ def dump_adj_csv(data_matrix, filename):
 
 
 #TODO: how to show size of a node? HUGE node or just color-coded?
+# TODO later: first entry always empty!
 # This method generates an adjacency matrix marking all the relevant sections.
 # Its output is built to look like the output of an excel adjacency matrix in csv format
 
-def generate_graph(file_map, all_maintainers_ file_filters, filename):
-    # first entry of headers needs to be empty
-    headers = ['']
+def generate_graph(file_map, all_maintainers_, file_filters, filename):
+
+    def _print_matrix():
+        print('Matrix is ', matrix)
+        print('len matrix is ', len(matrix))
+        print('empty ' + str(headers))
+        for i in range(len(matrix)):
+            string = ''
+            for j in range(len(matrix[i])):
+                #print('Indexes are i=%s and j=%s' % (i, j))
+                string += '  ' + str(matrix[i][j])
+            print(string)
 
     keys = set()
 
@@ -111,22 +121,49 @@ def generate_graph(file_map, all_maintainers_ file_filters, filename):
     else:
         keys = file_map.keys()
 
-    #print('keys are ', file_map.keys())
-    print('MY !!!! keys are ', keys)
+    headers = []
+    matrix = [[]]
 
     for file_key in keys:
-        def append_section(section, headers, matrix):
+
+        def _append_section(section, headers, matrix):
             headers.append(section)
 
             # append a new list to the matrix representing the new header now
-            matrix.append([Counter() for x in range(matrix)])
+            row = [Counter() for x in matrix]
+            matrix.append(row)
 
             # append to every row a new counter for the new column
             for i in range(len(matrix)):
                 matrix[i].append(Counter())
 
             
-        
+        lines, size, sections = file_map[file_key]
+        for first in sections:
+            # assume the section will be new till proven otherwise
+            i = len(headers)
+            try:
+                i = headers.index(first)
+            except ValueError: 
+                print('appending section ', first)
+                _append_section(first, headers, matrix)
+
+            for second in sections:
+                j = len(headers)
+                try:
+                    j = headers.index(second)
+                except:
+                    print('appending section ', second)
+                    _append_section(second, headers, matrix)
+
+                matrix[i][j].update(lines=lines, size=size)
+                
+                _print_matrix()
+
+        lines_matrix = [[entry['lines'] for entry in row] for row in matrix]
+
+
+
 
 
 #OLD: remember: it works if needed! Very hanky tho
