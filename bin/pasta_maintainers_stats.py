@@ -70,6 +70,11 @@ def get_status(all_maintainers, section_name):
         return ''
 
 
+# structure: built with numbered indices, each contains a tuple of the name,
+# some number (parameterized, probably for pretty printing) and the word lower cased and_connected_like_this
+# headers is built first with _title (in my case sections) at place 0, rest that follows can be looked up below
+
+
 def dump_csv(headers, relevant_headers, data, filename, adjacency=False):
     if filename:
         with open(filename, 'w+') as csv_file:
@@ -78,8 +83,9 @@ def dump_csv(headers, relevant_headers, data, filename, adjacency=False):
             csv_writer.writerows(data)
         return
 
-    headers_pretty = '\t\t'.join([headers[x][0] for x in relevant_headers])
+    headers_pretty = '\t\t'.join([headers[x][0] for x in relevant_headers]) #joins the PRETTY names together, ones at place 0
     print(headers_pretty)
+    #for each entry in data: for each relevant header: their parameterized thing printed with their corresponding data point
     for entry in data:
         str = ''
         for num in relevant_headers:
