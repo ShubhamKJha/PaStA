@@ -70,7 +70,7 @@ def get_status(all_maintainers, section_name):
         return ''
 
 
-def dump_csv(headers, relevant_headers, data, filename, adjacency=FALSE):
+def dump_csv(headers, relevant_headers, data, filename, adjacency=False):
     if filename:
         with open(filename, 'w+') as csv_file:
             csv_writer = writer(csv_file)
@@ -135,7 +135,7 @@ def generate_graph(file_map, all_maintainers_, file_filters, filename):
 
                 matrix[i][j].update(lines=lines, size=size)
                 
-                _print_matrix()
+                #_print_matrix()
 
         lines_matrix = [[entry['lines'] for entry in row] for row in matrix]
 
