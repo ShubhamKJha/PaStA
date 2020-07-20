@@ -70,12 +70,7 @@ def get_status(all_maintainers, section_name):
         return ''
 
 
-# structure: built with numbered indices, each contains a tuple of the name,
-# some number (parameterized, probably for pretty printing) and the word lower cased and_connected_like_this
-# headers is built first with _title (in my case sections) at place 0, rest that follows can be looked up below
-
-
-def dump_csv(headers, relevant_headers, data, filename, adjacency=False):
+def dump_csv(headers, relevant_headers, data, filename):
     if filename:
         with open(filename, 'w+') as csv_file:
             csv_writer = writer(csv_file)
@@ -83,9 +78,8 @@ def dump_csv(headers, relevant_headers, data, filename, adjacency=False):
             csv_writer.writerows(data)
         return
 
-    headers_pretty = '\t\t'.join([headers[x][0] for x in relevant_headers]) #joins the PRETTY names together, ones at place 0
+    headers_pretty = '\t\t'.join([headers[x][0] for x in relevant_headers])
     print(headers_pretty)
-    #for each entry in data: for each relevant header: their parameterized thing printed with their corresponding data point
     for entry in data:
         str = ''
         for num in relevant_headers:
@@ -93,11 +87,22 @@ def dump_csv(headers, relevant_headers, data, filename, adjacency=False):
         print(str)
 
 
-#TODO: how to show size of a node? HUGE node or just color-coded?
-# TODO later: first entry always empty!
-# This method generates an adjacency matrix marking all the relevant sections.
-# Its output is built to look like the output of an excel adjacency matrix in csv format
+def dump_adj(headers, data_matrix, filename):
+    # first entry of the matrix needs to be empty
+    written_line = ['']
+    written_line.extend(headers)
+    print('first line: ', written_line)
+    with open(filename, 'w+') as csv_file:
+        csv_writer = writer(csv_file)
+        csv_writer.writerow(written_line)
+        
+        for i in range(len(headers)):
+            written_line = [headers[i]]
+            written_line.extend(data_matrix[i])
+            csv_writer.writerow(written_line)
 
+
+# generating an adjacency matrix based on LoC and size
 def generate_graph(file_map, all_maintainers_, file_filters, filename):
     keys = set()
 
@@ -141,9 +146,9 @@ def generate_graph(file_map, all_maintainers_, file_filters, filename):
 
                 matrix[i][j].update(lines=lines, size=size)
                 
-                #_print_matrix()
-
         lines_matrix = [[entry['lines'] for entry in row] for row in matrix]
+
+    dump_adj(headers, lines_matrix, filename)
 
 
 def maintainers_stats(config, argv):
