@@ -20,14 +20,13 @@ data_matrix <- as.matrix(data_csv)
 g  <- graph.adjacency(data_matrix, weighted=TRUE,
                       diag=TRUE)
 
-
-
 # get size of each section by finding edge with source=target
 
 # verticeWeights <- E(g).select(weight=50)
 
 nodeSize <- array(1:(length(V(g))))
 nodeGroup <- array(1:(length(V(g))))
+linkValue <- array(1:(length(V(g))))
 
 E(g)
 
@@ -47,6 +46,9 @@ for (e in E(g)){
 }
 
 
+# nodebetweenness to control node size
+# source for nodebetweenness: https://gist.github.com/Vessy/d0228c983349cf138cefd0ced4098359
+
 # calculating the betweenness of nodes, can I use that later?
 
 betAll <- igraph::betweenness(g, v = igraph::V(g), directed = FALSE) / (((igraph::vcount(g) - 1) * (igraph::vcount(g)-2)) / 2)
@@ -62,8 +64,6 @@ betAll.norm <- (betAll - min(betAll))/(max(betAll) - min(betAll))
 gd3 <- igraph_to_networkD3(g)
 
 
-# nodebetweenness to control node size
-# source for nodebetweenness: https://gist.github.com/Vessy/d0228c983349cf138cefd0ced4098359
 
 nodeList <- cbind(gd3$nodes, nodeSize, nodeGroup)
 
@@ -75,11 +75,13 @@ rm(betAll, betAll.norm)
 
 forceNetwork(Links = gd3$links, Nodes = nodeList,
              Source = 'source', Target = 'target', NodeID = 'name',
-             #Value="value",
+             Value="value",
              Nodesize = "nodeSize",
              fontSize = 20,
              colourScale = JS("d3.scaleOrdinal(d3.schemeCategory10);"),
-             # linkDistance = JS("function(d){return 1/(d.value/1000);}"), requires further experimentation
+             linkDistance = JS("function(d){return 900000/d.value;}"),
+             #linkWidth = JS("function(d){return d.value/100000}"),
+             linkWidth = 5,
              Group = 'nodeGroup', zoom = TRUE
              )
 
