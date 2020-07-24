@@ -1,115 +1,53 @@
 #!/usr/bin/env Rscript
 
-#args <- commandArgs(trailingOnly = True)
-
-#file_name <- args[1]
-#install.packages("igraph")
-#install.packages("networkD3")
 library("networkD3")
 library("igraph")
 
+file_name = file.choose()
 
-#file_name = file.choose()
-#csv_data <- read.csv(file_name, header=TRUE, row.names=1)
-#data_matrix <- as.matrix(csv_data)
+data_csv = read.csv(file_name, header=TRUE, row.names = 1)
 
-#data_graph <- graph.adjacency(data_matrix, mode="undirected"
-#                          , diag=FALSE, weighted=TRUE)
+data_matrix <- as.matrix(data_csv)
 
-# source: http://www.vesnam.com/Rblog/viznets6/
+# getting the igraph graph
+g  <- graph.adjacency(data_matrix, weighted=TRUE,
+                      diag=TRUE)
 
-edgeList <- read.csv(file.choose(), header = TRUE, row.names=1)
-colnames(edgeList) <- c("SourceName", "TargetName", "Weight")
 
-gD <- graph.adjacency(edge_list, mode="undirected",
-                      diag=FALSE, weighted=TRUE)
-
-# Create a graph. Use simplyfy to ensure that there are no duplicated edges or self loops
-#gD <- igraph::simplify(igraph::graph.data.frame(edgeList, directed=FALSE))
-
-# Create a node list object (actually a data frame object) that will contain information about nodes
-nodeList <- data.frame(ID = c(0:(igraph::vcount(gD) - 1)), # because networkD3 library requires IDs to start at 0
-                       nName = igraph::V(gD)$name)
-
-# Map node names from the edge list to node IDs
-getNodeID <- function(x){
-  which(x == igraph::V(gD)$name) - 1 # to ensure that IDs start at 0
-}
-# And add them to the edge list
-edgeList <- plyr::ddply(edgeList, .variables = c("SourceName", "TargetName", "Weight"), 
-                        function (x) data.frame(SourceID = getNodeID(x$SourceName), 
-                                                TargetID = getNodeID(x$TargetName)))
-
-############################################################################################
-# Calculate some node properties and node similarities that will be used to illustrate 
-# different plotting abilities and add them to the edge and node lists
-
-# Calculate degree for all nodes
-nodeList <- cbind(nodeList, nodeDegree=igraph::degree(gD, v = igraph::V(gD), mode = "all"))
-
-# Calculate betweenness for all nodes
-betAll <- igraph::betweenness(gD, v = igraph::V(gD), directed = FALSE) / (((igraph::vcount(gD) - 1) * (igraph::vcount(gD)-2)) / 2)
+betAll <- igraph::betweenness(g, v = igraph::V(g), directed = FALSE) / (((igraph::vcount(g) - 1) * (igraph::vcount(g)-2)) / 2)
 betAll.norm <- (betAll - min(betAll))/(max(betAll) - min(betAll))
-nodeList <- cbind(nodeList, nodeBetweenness=100*betAll.norm) # We are scaling the value by multiplying it by 100 for visualization purposes only (to create larger nodes)
+
+
+# getting the igraph node group values
+
+# source: https://rdrr.io/cran/networkD3/man/igraph_to_networkD3.html
+
+wc <- cluster_walktrap(g)
+
+members <- membership(wc)
+
+# convert to a suitable object for networkD3
+
+gd3 <- igraph_to_networkD3(g, group=members)
+
+# nodebetweenness to control node size
+# source for nodebetweenness: https://gist.github.com/Vessy/d0228c983349cf138cefd0ced4098359
+
+nodeList <- cbind(gd3$nodes, nodeBetweenness=100*betAll.norm)
+
 rm(betAll, betAll.norm)
 
-#Calculate Dice similarities between all pairs of nodes
-dsAll <- igraph::similarity.dice(gD, vids = igraph::V(gD), mode = "all")
+# create force undirected network plot
 
-F1 <- function(x) {data.frame(diceSim = dsAll[x$SourceID +1, x$TargetID + 1])}
-edgeList <- plyr::ddply(edgeList, .variables=c("SourceName", "TargetName", "Weight", "SourceID", "TargetID"), 
-                        function(x) data.frame(F1(x)))
-
-rm(dsAll, F1, getNodeID, gD)
-
-############################################################################################
-# We will also create a set of colors for each edge, based on their dice similarity values
-# We'll interpolate edge colors based on the using the "colorRampPalette" function, that 
-# returns a function corresponding to a collor palete of "bias" number of elements (in our case, that
-# will be a total number of edges, i.e., number of rows in the edgeList data frame)
-F2 <- colorRampPalette(c("#FFFF00", "#FF0000"), bias = nrow(edgeList), space = "rgb", interpolate = "linear")
-colCodes <- F2(length(unique(edgeList$diceSim)))
-edges_col <- sapply(edgeList$diceSim, function(x) colCodes[which(sort(unique(edgeList$diceSim)) == x)])
-
-rm(colCodes, F2)
-############################################################################################
-# Let's create a network
-
-D3_network_LM <- networkD3::forceNetwork(Links = edgeList, # data frame that contains info about edges
-                                         Nodes = nodeList, # data frame that contains info about nodes
-                                         Source = "SourceID", # ID of source node 
-                                         Target = "TargetID", # ID of target node
-                                         Value = "Weight", # value from the edge list (data frame) that will be used to value/weight relationship amongst nodes
-                                         NodeID = "nName", # value from the node list (data frame) that contains node description we want to use (e.g., node name)
-                                         Nodesize = "nodeBetweenness",  # value from the node list (data frame) that contains value we want to use for a node size
-                                         Group = "nodeDegree",  # value from the node list (data frame) that contains value we want to use for node color
-                                         height = 500, # Size of the plot (vertical)
-                                         width = 1000,  # Size of the plot (horizontal)
-                                         fontSize = 20, # Font size
-                                         linkDistance = networkD3::JS("function(d) { return 10*d.value; }"), # Function to determine distance between any two nodes, uses variables already defined in forceNetwork function (not variables from a data frame)
-                                         linkWidth = networkD3::JS("function(d) { return d.value/5; }"),# Function to determine link/edge thickness, uses variables already defined in forceNetwork function (not variables from a data frame)
-                                         opacity = 0.85, # opacity
-                                         zoom = TRUE, # ability to zoom when click on the node
-                                         opacityNoHover = 0.1, # opacity of labels when static
-                                         linkColour = edges_col) # edge colors
-
-# Plot network
-D3_network_LM 
-
-# Save network as html file
-networkD3::saveNetwork(D3_network_LM, "D3_LM.html", selfcontained = TRUE)
-
-################################## for igraph
-# data_matrix <- as.matrix(csv_data)
-
-# data_graph <- graph.adjacency(data_matrix, mode="undirected"
-#                            , diag=FALSE, weighted=TRUE)
-
-# plot(data_graph, edge.label=E(data_graph)$weight)
-
-################################### for igraph end
+forceNetwork(Links = gd3$links, Nodes = nodeList,
+             Source = 'source', Target = 'target', NodeID = 'name',
+             #Value="value",
+             Nodesize = "nodeBetweenness",
+             fontSize = 20,
+             Group = 'group', zoom = TRUE
+             )
 
 
 
-
+nodes <- data.frame()
 
