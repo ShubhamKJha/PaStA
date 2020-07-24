@@ -111,44 +111,67 @@ def generate_graph(file_map, all_maintainers_, file_filters, filename):
     else:
         keys = file_map.keys()
 
-    headers = []
-    matrix = []
+    import networkx as nx
+    from itertools import combinations
+    G = nx.Graph()
 
-    for file_key in keys:
+    for key_name in keys:
+        lines, size, sections = file_map[key_name]
+        for c1, c2 in combinations(sections, 2):
+            if not G.has_edge(c1, c2):
+                G.add_edge(c1, c2, weight=Counter())
+            G[c1][c2]['weight'].update(lines=lines,size=size)
 
-        def _append_section(section, headers, matrix):
-            headers.append(section)
+    with open(filename, 'w+') as csv_file:
+        csv_writer = writer(csv_file)
+        
+        for a, b in G.edges:
+            line = [a, b, G[a][b]['weight']['lines']]
+            csv_writer.writerow(line)
 
-            # append a new list to the matrix representing the new header now
-            row = [Counter() for x in matrix]
-            matrix.append(row)
 
-            # append to every row a new counter for the new column
-            for i in range(len(matrix)):
-                matrix[i].append(Counter())
+    #headers = []
+    #matrix = []
 
-            
-        lines, size, sections = file_map[file_key]
-        for first in sections:
-            # assume the section will be new till proven otherwise
-            i = len(headers)
-            try:
-                i = headers.index(first)
-            except ValueError: 
-                _append_section(first, headers, matrix)
+    #for file_key in keys:
 
-            for second in sections:
-                j = len(headers)
-                try:
-                    j = headers.index(second)
-                except:
-                    _append_section(second, headers, matrix)
+    #    def _append_section(section, headers, matrix):
+    #        headers.append(section)
 
-                matrix[i][j].update(lines=lines, size=size)
-                
-        lines_matrix = [[entry['lines'] for entry in row] for row in matrix]
+    #        # append a new list to the matrix representing the new header now
+    #        row = [Counter() for x in matrix]
+    #        matrix.append(row)
 
-    dump_adj(headers, lines_matrix, filename)
+    #        # append to every row a new counter for the new column
+    #        for i in range(len(matrix)):
+    #            matrix[i].append(Counter())
+
+    #        
+    #    lines, size, sections = file_map[file_key]
+    #    for first in sections:
+    #        if first == 'THE REST':
+    #            continue
+    #        # assume the section will be new till proven otherwise
+    #        i = len(headers)
+    #        try:
+    #            i = headers.index(first)
+    #        except ValueError: 
+    #            _append_section(first, headers, matrix)
+
+    #        for second in sections:
+    #            if second == 'THE REST':
+    #                continue
+    #            j = len(headers)
+    #            try:
+    #                j = headers.index(second)
+    #            except:
+    #                _append_section(second, headers, matrix)
+
+    #            matrix[i][j].update(lines=lines, size=size)
+    #            
+    #    lines_matrix = [[entry['lines'] for entry in row] for row in matrix]
+
+    #dump_adj(headers, lines_matrix, filename)
 
 
 def maintainers_stats(config, argv):
