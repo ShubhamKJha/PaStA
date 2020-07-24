@@ -12,15 +12,12 @@ library("igraph")
 
 file_name = file.choose()
 
-data_csv = read.csv(file_name, header=TRUE, row.names = 1)
-
-data_matrix <- as.matrix(data_csv)
+data_csv = read.csv(file_name, header=FALSE)
 
 # getting the igraph graph
-g  <- graph.adjacency(data_matrix, weighted=TRUE,
-                      diag=TRUE)
+g  <- graph.data.frame(data_csv, directed=FALSE)
 
-# get size of each section by finding edge with source=target
+# get size of each section by finding edge with target or source = THE REST
 
 # verticeWeights <- E(g).select(weight=50)
 
@@ -28,20 +25,28 @@ nodeSize <- array(1:(length(V(g))))
 nodeGroup <- array(1:(length(V(g))))
 linkValue <- array(1:(length(V(g))))
 
-for (e in E(g)){
-  if(head_of(g, e) == tail_of(g, e)) {
-    node_weight <- E(g)$weight[e]
-    if(node_weight < smallThresh){
-      nodeGroup[head_of(g, e)] = "small"
+assign_node_group <- function(index, e, g){
+  node_weight <- E(g)$weight[e]
+  nodeSize[index] <- node_weight
+  
+  if(node_weight < smallThresh){
+    nodeGroup[index] = "small"
     } else if(node_weight < mediumThresh) {
-      nodeGroup[head_of(g, e)] = "medium"
+      nodeGroup[index] = "medium"
     } else {
-      nodeGroup[head_of(g, e)] = "big"
+        nodeGroup[index] = "big"
     }
-    
-    nodeSize[head_of(g, e)] = node_weight/node_size_divisor
+}
+
+for (e in E(g)){
+  if(head_of(g, e) == "THE REST") {
+    assign_node_group(tail_of(g, e), e, g)
+  } else if (tail_of(g, e) == "THE REST") {
+    assign_node_group(head_of(g, e), e, g)
   }
 }
+
+plot(g)
 
 # source: https://rdrr.io/cran/networkD3/man/igraph_to_networkD3.html
 
@@ -56,7 +61,6 @@ nodeList <- cbind(gd3$nodes, nodeSize, nodeGroup)
 # creating the link list. Further information to be appended?
 linkList <- gd3$links
 
-
 # create force undirected network plot
 forceNetwork(Links = gd3$links, Nodes = nodeList,
              Source = 'source', Target = 'target', NodeID = 'name',
@@ -64,13 +68,25 @@ forceNetwork(Links = gd3$links, Nodes = nodeList,
              Nodesize = "nodeSize",
              fontSize = 20,
              colourScale = JS("d3.scaleOrdinal(d3.schemeCategory10);"),
-             linkDistance = JS("function(d){return 10000/d.value;}"),
+             linkDistance = JS("function(d){return 100000/d.value;}"),
              #linkWidth = JS("function(d){return d.value/100000}"),
              linkWidth = 5,
              Group = 'nodeGroup', zoom = TRUE
              ) %>%
 
 saveNetwork(file = "forcedNet.html")
+
+forceNetwork(Links = gd3$links, Nodes = nodeList,
+             Source = 'source', Target = 'target', NodeID = 'name',
+             Value="value",
+             Nodesize = "nodeSize",
+             fontSize = 20,
+             colourScale = JS("d3.scaleOrdinal(d3.schemeCategory10);"),
+             linkDistance = JS("function(d){return 100000/d.value;}"),
+             #linkWidth = JS("function(d){return d.value/100000}"),
+             linkWidth = 5,
+             Group = 'nodeGroup', zoom = TRUE
+)
 
 
 
