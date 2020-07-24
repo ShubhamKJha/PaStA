@@ -1,5 +1,8 @@
 #!/usr/bin/env Rscript
 
+smallThresh <- 7000
+mediumThresh <- 14000
+
 library("networkD3")
 library("igraph")
 
@@ -13,6 +16,24 @@ data_matrix <- as.matrix(data_csv)
 g  <- graph.adjacency(data_matrix, weighted=TRUE,
                       diag=TRUE)
 
+
+
+# get size of each section by finding edge with source=target
+
+verticeWeights <- E(g).select(weight=50)
+
+nodeSize <- array(1:(length(V(g))))
+
+E(g)
+
+for (e in E(g)){
+  if(head_of(g, e) == tail_of(g, e)){
+    nodeSize[head_of(g, e)] = E(g)$weight[e]
+  }
+}
+
+
+# calculating the betweenness of nodes
 
 betAll <- igraph::betweenness(g, v = igraph::V(g), directed = FALSE) / (((igraph::vcount(g) - 1) * (igraph::vcount(g)-2)) / 2)
 betAll.norm <- (betAll - min(betAll))/(max(betAll) - min(betAll))
@@ -30,10 +51,13 @@ members <- membership(wc)
 
 gd3 <- igraph_to_networkD3(g, group=members)
 
+
 # nodebetweenness to control node size
 # source for nodebetweenness: https://gist.github.com/Vessy/d0228c983349cf138cefd0ced4098359
 
 nodeList <- cbind(gd3$nodes, nodeBetweenness=100*betAll.norm)
+
+linkList <- gd3$links
 
 rm(betAll, betAll.norm)
 
