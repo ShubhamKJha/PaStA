@@ -1,11 +1,24 @@
 #!/usr/bin/env Rscript
 
-smallThresh <- 2000000
-mediumThresh <- 6000000
+
+g <- make_ring(10) %>%
+  set_vertex_attr("name", value = LETTERS[1:10])
+g
+plot(g)
+V(g)
+
+g2 <- delete_vertices(g, c(1,5)) %>%
+  delete_vertices("B")
+g2
+plot(g2)
+V(g2)
+
+smallThresh <- 10000000
+mediumThresh <- 7000
 
 # the actual size of nodes is too big with their actual weight
 # dividing it by this value makes it easier to look at
-node_size_divisor <- 100000
+node_size_divisor <- 10
 
 library("networkD3")
 library("igraph")
@@ -24,7 +37,7 @@ data_frame
 
 # getting the igraph graph
 g  <- graph_from_data_frame(data_frame, directed=FALSE)
-g <- set_edge_attr(g, "weight", value=data_csv$weight)
+g <- set_edge_attr(g, "weight", value=as.numeric(data_csv$weight))
 
 plot(g)
 
@@ -40,42 +53,54 @@ linkValue <- array(1:(length(V(g)) - 1))
 
 
 
-rest_id <- which(V(g)$name == "THE REST")
+rest_id <- as.numeric(which(V(g)$name == "THE REST"))
 
-some_var <- 5
 assign_node_group <- function(index, g, e){
-  some_var <- E(g)$weight[e]
-  node_weight <- E(g)$weight[e]
-  
-  node_weight <- edge_attr(g, )
-  
-  
-  node_weight
-  # nodeSize[index] <- node_weight # FAULTY! fix later
+  node_weight <- as.numeric(E(g)$weight[e])
+  print("node_weight:")
+  print(node_weight)
   
   if(node_weight < smallThresh){
+    print("it's small")
     nodeGroup[index] = "small"
     } else if(node_weight < mediumThresh) {
+      
+      print("it's medium")
       nodeGroup[index] = "medium"
     } else {
+      print("it's big")
         nodeGroup[index] = "big"
     }
-  #delete.edges(g, which(as_edgelist(g)==REST_index, arr.ind=TRUE)[,REST_index])
-  
-  delete_edges(g, e)
 }
 
+
+
+E(g)
+
 for (e in E(g)){
+  print(e)
   if(head_of(g, e) == rest_id) {
+    print("made it in")
     assign_node_group(tail_of(g, e), g, e)
   } else if (tail_of(g, e) == rest_id) {
+    print("made it in, too")
     assign_node_group(head_of(g, e), g, e)
   }
 }
 
-after <- as_edgelist(g)
+as_edgelist(g)
+
+g<-delete.edges(g,which(as_edgelist(g)=="THE REST",arr.ind=TRUE)[,1])
+
+as_edgelist(g)
 
 plot(g)
+
+g <- delete.vertices(g, "THE REST")
+
+V(g)
+
+
 
 # source: https://rdrr.io/cran/networkD3/man/igraph_to_networkD3.html
 
