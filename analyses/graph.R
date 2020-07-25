@@ -1,18 +1,10 @@
 #!/usr/bin/env Rscript
 
-#important ones: MEDIA INPUT INFRASTRUCTURE (V4L/...)
-# DOCUMENTATION
-# NETWORK DRIVERS
-# ARM FREESCALE IMX/MXC ARCHITECTURE
-# NETWORKING DRIVERS
+#TODO: many magic thresholds floating around, make them relative
 
 smallThresh <- 5000000
 mediumThresh <- 7000000
 
-
-edge_Distance_Multiplier <- 10000
-edge_Distance_Max <- 1000
-edge_Distance_Min <- 100
 
 # the actual size of nodes is too big with their actual weight
 # dividing it by this value makes it easier to look at
@@ -33,15 +25,11 @@ data_frame <- data.frame(data_matrix)
 g  <- graph_from_data_frame(data_frame, directed=FALSE)
 g <- set_edge_attr(g, "weight", value=as.numeric(data_csv$weight))
 
-# get size of each section by finding edge with target or source = THE REST
+# get the size of each section by finding edge with target or source = THE REST
 
-# verticeWeights <- E(g).select(weight=50)
-
-nodeSize <- array(1:(length(V(g)) - 2))
-nodeGroup <- array(1:(length(V(g)) - 2))
-linkValue <- array(1:(length(V(g)) - 2))
-
-
+nodeSize <- array(1:(length(V(g)) - 1))
+nodeGroup <- array(1:(length(V(g)) - 1))
+linkValue <- array(1:(length(V(g)) - 1))
 
 rest_id <- as.numeric(which(V(g)$name == "THE REST"))
 
@@ -73,7 +61,7 @@ g<-delete.edges(g,which(as_edgelist(g)=="THE REST",arr.ind=TRUE)[,1])
 g <- delete.vertices(g, "THE REST")
 
 #removing these for better visualization
-g <- delete.vertices(g, "DOCUMENTATION")
+#g <- delete.vertices(g, "DOCUMENTATION")
 #g <- delete.vertices(g, "DOCUMENTATION/ITALIAN")
 #g <- delete.vertices(g, "OPEN FIRMWARE AND FLATTENED DEVICE TREE BINDINGS")
 
@@ -117,7 +105,7 @@ saveNetwork(file = "forcedNet.html")
 
 
 
-##########betweenness of nodes -> not used for now, but interesting?
+##########betweenness of nodes -> not used for now, but perhaps interesting?
 
 
 # nodebetweenness to control node size
