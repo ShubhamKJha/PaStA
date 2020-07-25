@@ -124,6 +124,9 @@ def generate_graph(file_map, all_maintainers_, file_filters, filename):
 
     with open(filename, 'w+') as csv_file:
         csv_writer = writer(csv_file)
+
+        line = ["from", "to", "weight"]
+        csv_writer.writerow(line)
         
         for a, b in G.edges:
             line = [a, b, G[a][b]['weight']['lines']]
