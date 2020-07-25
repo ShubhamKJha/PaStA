@@ -12,22 +12,46 @@ library("igraph")
 
 file_name = file.choose()
 
-data_csv = read.csv(file_name, header=FALSE)
+data_csv = read.csv(file_name, header=TRUE)
+
+data_matrix <- as.matrix(data_csv)
+
+data_matrix
+
+data_frame <- data.frame(data_matrix)
+
+data_frame
 
 # getting the igraph graph
-g  <- graph.data.frame(data_csv, directed=FALSE)
+g  <- graph_from_data_frame(data_frame, directed=FALSE)
+g <- set_edge_attr(g, "weight", value=data_csv$weight)
+
+plot(g)
 
 # get size of each section by finding edge with target or source = THE REST
 
 # verticeWeights <- E(g).select(weight=50)
 
-nodeSize <- array(1:(length(V(g))))
-nodeGroup <- array(1:(length(V(g))))
-linkValue <- array(1:(length(V(g))))
+E(g)
 
-assign_node_group <- function(index, e, g){
+nodeSize <- array(1:(length(V(g)) - 1))
+nodeGroup <- array(1:(length(V(g)) - 1))
+linkValue <- array(1:(length(V(g)) - 1))
+
+
+
+rest_id <- which(V(g)$name == "THE REST")
+
+some_var <- 5
+assign_node_group <- function(index, g, e){
+  some_var <- E(g)$weight[e]
   node_weight <- E(g)$weight[e]
-  nodeSize[index] <- node_weight
+  
+  node_weight <- edge_attr(g, )
+  
+  
+  node_weight
+  # nodeSize[index] <- node_weight # FAULTY! fix later
   
   if(node_weight < smallThresh){
     nodeGroup[index] = "small"
@@ -36,15 +60,20 @@ assign_node_group <- function(index, e, g){
     } else {
         nodeGroup[index] = "big"
     }
+  #delete.edges(g, which(as_edgelist(g)==REST_index, arr.ind=TRUE)[,REST_index])
+  
+  delete_edges(g, e)
 }
 
 for (e in E(g)){
-  if(head_of(g, e) == "THE REST") {
-    assign_node_group(tail_of(g, e), e, g)
-  } else if (tail_of(g, e) == "THE REST") {
-    assign_node_group(head_of(g, e), e, g)
+  if(head_of(g, e) == rest_id) {
+    assign_node_group(tail_of(g, e), g, e)
+  } else if (tail_of(g, e) == rest_id) {
+    assign_node_group(head_of(g, e), g, e)
   }
 }
+
+after <- as_edgelist(g)
 
 plot(g)
 
