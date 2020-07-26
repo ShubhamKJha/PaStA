@@ -48,12 +48,14 @@ plot.igraph(g, mark.groups=groups(clust), vertex.size=2,
             vertex.label.dist=1, vertex.label.cex=0.1,
             layout=layout_with_mds)
 
-plot(g)
+#plot(g)
+
+visIgraphLayout(visIgraph(g), layout=layout_with_mds)
 
 visIgraph(g) %>%
   visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE)
 
-
+################### TODO: use later for node size calculations ##########
 #ggnet2(g, label=True)
 
 # get the size of each section by finding edge with target or source = THE REST
@@ -82,5 +84,3 @@ g <- igraph::delete.edges(g,which(as_edgelist(g)=="THE REST",arr.ind=TRUE)[,1])
 
 # removing this because it's trivial that the rest includes everything
 g <- igraph::delete.vertices(g, "THE REST")
-
-ggnet2(g, label=TRUE)
