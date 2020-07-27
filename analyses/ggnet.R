@@ -3,6 +3,7 @@
 #ATTENTION: Code copied and pasted from graph.R, fix that
 
 node_size_divisor <- 100
+keywords <- c("NETWORKING", "MEMORY", "DRIVERS", "ARM32")
 
 #install.packages("ColorBrewer")
 #install.packages("intergraph")
@@ -22,11 +23,10 @@ data_csv = read.csv(file_name, header=TRUE)
 data_matrix <- as.matrix(data_csv)
 
 data_frame <- data.frame(data_matrix)
+data_frame$weight <- as.numeric(data_frame$weight)
 
-# igraph-conversion for easier name and edge weight handling
-# TODO: better way to do this?
 g  <- graph_from_data_frame(data_frame, directed=FALSE)
-g <- set_edge_attr(g, "weight", value=as.numeric(data_csv$weight))
+
 
 g <- igraph::delete.edges(g,which(as_edgelist(g)=="THE REST",arr.ind=TRUE)[,1])
 
@@ -38,15 +38,49 @@ g <- igraph::delete.vertices(g, "THE REST")
 
 clust  <- cluster_walktrap(g)
 
-#l <- qgraph.layout.fruchtermanreingold(adjacency,vcount=vcount(g),
+assign_vertex_group <- function(g){
+  for(v in V(g)){
+    print("processing vertex:")
+    print(vertex_attr(g, "name", v))
+    set_vertex_attr(g, "group", v, "UNKNOWN")
+    for(k in keywords){
+      if(grepl(k, vertex_attr(g, "name", v))){
+        print("assigning keyword:")
+        print(k)
+        set_vertex_attr(g, "group", v, k)
+      }
+    }
+  }
+}
+
+assign_vertex_group(g)
+
+edge_quantiles <- quantile(E(g)$weight)
+
+quantile(E(g)$weight)
+
+
+#l <- qgraph.layout.fruchtermanreingold(adjacency,vcount=vcount(g))
 #                                       niter=1000,
 #                                       repulse.rad = vcount(g)^2)
 
-l <- qgraph.layout.layout_with_mds()
 
-plot.igraph(g, mark.groups=groups(clust), vertex.size=2,
-            vertex.label.dist=1, vertex.label.cex=0.1,
-            layout=layout_with_mds)
+l <- layout.reingold.tilford(g, circular=TRUE)
+
+l <- layout.kamada.kawai(g)
+
+plot.igraph(g,
+            mark.groups=groups(clust),
+            #mark.groups = V(g)$group,
+            vertex.size=2,
+            vertex.label.dist=1, vertex.label.cex=0.35,
+            layout=l
+            #layout=layout_with_mds
+            )
+
+legend("topleft",bty = "n",
+       legend=levels(),
+       fill=pal, border=NA)
 
 #plot(g)
 
