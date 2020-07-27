@@ -31,7 +31,6 @@ g <- igraph::delete.edges(g,which(as_edgelist(g)=="THE REST",arr.ind=TRUE)[,1])
 
 adjacency <- get.adjacency(g)
 
-
 # removing this because it's trivial that the rest includes everything
 g <- igraph::delete.vertices(g, "THE REST")
 
@@ -77,16 +76,25 @@ plot.igraph(g,
             #layout=layout_with_mds
             )
 
-legend("topleft",bty = "n",
-       legend=levels(),
-       fill=pal, border=NA)
-
 #plot(g)
 
-visIgraphLayout(visIgraph(g), layout=layout_with_mds)
+# TODO: how does this work?
+#visIgraphLayout(visIgraph(g), layout=layout_with_mds)
 
 visIgraph(g) %>%
   visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE)
+
+vis_network <- visIgraph(g)
+
+
+server <- function(input, output){
+  output$network <- renderVisNetwork({
+    visOptions(vis_network, highlightNearest = TRUE, nodesIdSelection = TRUE)})
+    
+}
+
+
+
 
 ################### TODO: use later for node size calculations ##########
 #ggnet2(g, label=True)
@@ -113,7 +121,6 @@ for (e in E(g)){
 }
 
 g <- igraph::delete.edges(g,which(as_edgelist(g)=="THE REST",arr.ind=TRUE)[,1])
-
 
 # removing this because it's trivial that the rest includes everything
 g <- igraph::delete.vertices(g, "THE REST")
