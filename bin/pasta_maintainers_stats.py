@@ -15,10 +15,12 @@ the COPYING file in the top-level directory.
 import os
 import pygit2
 import sys
+import networkx as nx
 
 from argparse import ArgumentParser
 from collections import defaultdict, Counter
 from csv import writer
+from itertools import combinations
 from logging import getLogger
 from multiprocessing import Pool, cpu_count
 
@@ -88,62 +90,33 @@ def dump_csv(headers, relevant_headers, data, filename):
 
 
 # generating an adjacency matrix based on LoC and size
-def generate_graph(file_map, all_maintainers_, file_filters, filename, args_sections, minsize):
-    keys = set()
+def generate_graph(file_map, file_filters, f_csv):
+    filenames = file_filters
+    if not filenames:
+        filenames = file_map.keys()
 
-    if (len(file_filters)):
-        keys = file_filters
-    else:
-        keys = file_map.keys()
-
-    import networkx as nx
-    from itertools import combinations
     G = nx.Graph()
 
     # first iteration: find all nodes connected to the sections to be considered
-    for key_name in keys:
-        lines, size, sections = file_map[key_name]
+    for filename in filenames:
+        lines, size, sections = file_map[filename]
+        for section in sections:
+            if not G.has_edge(section, section):
+                G.add_edge(section, section, weight=Counter())
+            G[section][section]['weight'].update(lines=lines, size=size)
         for c1, c2 in combinations(sections, 2):
-            if not args_sections or (c1 in args_sections or c2 in args_sections):
-                if not G.has_edge(c1, c2):
-                    G.add_edge(c1, c2, weight=Counter())
-                G[c1][c2]['weight'].update(lines=lines,size=size)
+            if not G.has_edge(c1, c2):
+                G.add_edge(c1, c2, weight=Counter())
+            G[c1][c2]['weight'].update(lines=lines, size=size)
 
-    # if sections are to be regarded, we need a second run-through
-    # to find the overall size of a section through THE REST
-    # which is needed for the R computation
-    if args_sections:
-        for key_name in keys:
-            lines, size, sections = file_map[key_name]
-            for c1, c2 in combinations(sections, 2):
-                if (c1 == 'THE REST' and G.has_node(c2)) or \
-                   (c2 == 'THE REST' and G.has_node(c1)):
-                        if not G.has_edge(c1, c2):
-                            G.add_edge(c1, c2, weight=Counter())
-                        G[c1][c2]['weight'].update(lines=lines,size=size)
-    
-    if minsize:
-        to_be_omitted = []
-
-        for a, b in G.edges('THE REST'):
-            if G[a][b]['weight']['lines'] < minsize:
-                if a == 'THE REST':
-                    to_be_omitted.extend(G.edges(b))
-                else:
-                    to_be_omitted.extend(G.edges(a))
-
-        G.remove_edges_from(to_be_omitted)
-
-
-
-    with open(filename, 'w+') as csv_file:
+    with open(f_csv, 'w') as csv_file:
         csv_writer = writer(csv_file)
-
-        line = ["from", "to", "weight"]
+        line = ["from", "to", "lines", "size"]
         csv_writer.writerow(line)
         
         for a, b in G.edges:
-            line = [a, b, G[a][b]['weight']['lines']]
+            ctr_edge = G[a][b]['weight']
+            line = [a, b, ctr_edge['lines'], ctr_edge['size']]
             csv_writer.writerow(line)
 
 
@@ -180,22 +153,12 @@ def maintainers_stats(config, argv):
                              'the sections and their relations to another '
                              'based on the (non-)filtered files'
                              'Default: %(default)s')
-    parser.add_argument('--sections', type=str, nargs='+',
-                             help='Which sections to group by'
-                             'when building the csv graph output. If mode is'
-                             'not graph, this option is silently ignored')
-    parser.add_argument('--minsize', type=int, help='In mode graph:'
-                             'define a threshold upon smaller sections'
-                             'are to be omitted. This option is silently'
-                             'ignored if mode is not graph')
-
 
     args = parser.parse_args(argv)
 
     if args.mode == 'graph' and not args.csv:
         log.error('Graph mode and no given output for csv file. Exiting')
         return
-
 
     repo = config.repo
 
@@ -249,7 +212,7 @@ def maintainers_stats(config, argv):
 
     # if we want to generate the graph, we just need the file_map to again calculate the information 
     if args.mode == 'graph':
-        generate_graph(file_map, all_maintainers, filter_by_files, args.csv, args.sections, args.minsize)
+        generate_graph(file_map, filter_by_files, args.csv)
         return
 
     # An object is the kind of the analysis, and reflects the target. A target
