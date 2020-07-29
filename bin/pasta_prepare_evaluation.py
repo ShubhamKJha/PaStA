@@ -269,6 +269,14 @@ def prepare_evaluation(config, argv):
                              'prepare data for ignored patch analysis \n'
                         )
 
+    parser.add_argument('--patch_conform',
+                        action='store_const',
+                        const='patch_conform',
+                        dest='mode',
+                        help='prepare data for patch analysis \n'
+                            'prepare data for patch conform analysis \n'
+                        )
+
     parser.add_argument('--off-list',
                         action='store_const',
                         const='off-list',
