@@ -24,6 +24,7 @@ from subprocess import call
 
 from pypasta.LinuxMaintainers import load_maintainers
 from pypasta.LinuxMailCharacteristics import load_linux_mail_characteristics
+from pypasta.Util import get_first_upstream
 
 log = getLogger(__name__[-15:])
 
@@ -257,6 +258,71 @@ def prepare_patch_review(config, clustering):
     log.info("Total clusters found by pasta: {}".format(len(clusters)))
 
 
+def prepare_patch_conform_patches(config, clustering):
+    repo, patches, upstream, characteristics, maintainers_version = \
+        _prep_characteristical_eval(config, clustering)
+
+    relevant = get_relevant_patches(characteristics)
+
+    integrated_patches = {patch for patch in relevant if
+                       characteristics[patch].is_upstream}
+
+    num_integrated = len(integrated_patches)
+
+    log.info('Found %s integrated patches within specified time window'
+             % num_integrated)
+
+    with open(config.f_characteristics, 'w') as csv_file:
+        csv_fields = ['id', 'committer', 'list', 'list_matches_patch',
+                      'all_lists_one_mtr_per_sec',
+                      'one_list_and_mtr', 'one_list_mtr_per_sec',
+                          'one_list_or_mtr', 'one_list',
+                      'maintainers_integrated']
+        writer = csv.DictWriter(csv_file, fieldnames=csv_fields)
+        writer.writeheader()
+
+        log.info('Dumping characteristics...')
+        for message_id in sorted(integrated_patches):
+            c = characteristics[message_id]
+            metrics = c.maintainer_metrics
+
+            # get the committer
+            upstream = get_first_upstream(repo, clustering, message_id)
+            committer = repo[upstream].committer.name.lower()
+
+            # see if a maintainer integrated the patch
+            maintainers_integrated = False
+
+            version = c.linux_version
+            linux_maintainers = maintainers_version[version]
+            total_maintainers = list()
+            affected_files = repo[message_id].diff.affected
+            for section in linux_maintainers.get_sections_by_files(affected_files):
+                _, maintainers, _ = linux_maintainers.get_maintainers(section)
+                total_maintainers.extend(maintainers)
+
+            if committer in [name for name, mail in total_maintainers]:
+                maintainers_integrated = True
+
+            for linux_list in repo.mbox.get_lists(message_id):
+                list_matches_patch = c.list_matches_patch(linux_list)
+
+                row = {'id': message_id,
+                       'committer': committer,
+                       'list': linux_list,
+                       'list_matches_patch': list_matches_patch,
+                       'all_lists_one_mtr_per_sec':
+                           metrics.all_lists_one_mtr_per_sec,
+                       'one_list_and_mtr': metrics.one_list_and_mtr,
+                       'one_list_mtr_per_sec': metrics.one_list_mtr_per_sec,
+                       'one_list_or_mtr': metrics.one_list_or_mtr,
+                       'one_list': metrics.one_list,
+                       'maintainers_integrated': maintainers_integrated
+                       }
+
+                writer.writerow(row)
+
+
 def prepare_evaluation(config, argv):
     parser = argparse.ArgumentParser(prog='prepare_evaluation',
                                      description='aggregate commit and patch info')
@@ -305,6 +371,9 @@ def prepare_evaluation(config, argv):
 
     if analysis_option.mode == 'ignored':
         prepare_ignored_patches(config, clustering)
+
+    if analysis_option.mode == 'patch_conform':
+        prepare_patch_conform_patches(config, clustering)
 
     elif analysis_option.mode == 'off-list':
         prepare_off_list_patches()
