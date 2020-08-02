@@ -259,18 +259,12 @@ def prepare_patch_review(config, clustering):
 
 
 def prepare_patch_conform_patches(config, clustering):
-    repo, patches, upstream, characteristics, maintainers_version = \
-        _prep_characteristical_eval(config, clustering)
-
+    repo = config.repo
+    characteristics, maintainers_version = load_characteristics_and_maintainers(config, clustering)
     relevant = get_relevant_patches(characteristics)
 
-    integrated_patches = {patch for patch in relevant if
-                       characteristics[patch].is_upstream}
-
-    num_integrated = len(integrated_patches)
-
-    log.info('Found %s integrated patches within specified time window'
-             % num_integrated)
+    integrated_patches = {patch for patch in relevant if characteristics[patch].is_upstream}
+    log.info('Found %s integrated patches within specified time window' % len(integrated_patches))
 
     with open(config.f_characteristics, 'w') as csv_file:
         csv_fields = ['id', 'committer', 'list', 'list_matches_patch',
@@ -290,9 +284,6 @@ def prepare_patch_conform_patches(config, clustering):
             upstream = get_first_upstream(repo, clustering, message_id)
             committer = repo[upstream].committer.name.lower()
 
-            # see if a maintainer integrated the patch
-            maintainers_integrated = False
-
             version = c.linux_version
             linux_maintainers = maintainers_version[version]
             total_maintainers = list()
@@ -301,6 +292,10 @@ def prepare_patch_conform_patches(config, clustering):
                 _, maintainers, _ = linux_maintainers.get_maintainers(section)
                 total_maintainers.extend(maintainers)
 
+
+            # True, if the patch was integrated by one of the maintainers that is
+            # responsible for the patch, according to MAINTAINERS
+            maintainers_integrated = False
             if committer in [name for name, mail in total_maintainers]:
                 maintainers_integrated = True
 
